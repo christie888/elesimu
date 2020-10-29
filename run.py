@@ -1,5 +1,5 @@
-from ElevatorEnv import *
-from Functions import *
+from elesimu.ElevatorEnv import *
+from elesimu.Functions import *
 import os
 
 
@@ -7,9 +7,9 @@ MuFilePath ='file/mu/mu_test.xlsx'
 
 Floor_Num = 20
 Mu_flag = 0
-pattern ="merge" #"mdp"#"merge"# #"normal" #"normal" #
+pattern ="normal" #"mdp"#"merge"# #"normal" #"normal" #
 
-Dire_FLg= "up"  #"down" #
+Dire_FLg= "down"  #"down" #
 Delta_f= 2
 
 Peak_duration = 2 * 3600
@@ -37,7 +37,7 @@ def ManageTL(tl,changeTemp,mdpChangeNum,mu_dist):
         if mdpChangeNum==0 or changeTemp>mdpChangeNum:
             print(changeTemp)
             if Mu_flag == 0:
-                fileNormalpath = './file/normalData/' + paras + Mu_flag + '_normal.xlsx'
+                fileNormalpath = './file/normalData/' + paras + str(Mu_flag) + '_normal.xlsx'
                 normaldata = pd.read_excel(fileNormalpath)
 
                 targetFs = tagetingFloorMDP(Delta_f, duTime, normaldata, Delta_T, Floor_Num)
@@ -68,8 +68,11 @@ if __name__ == "__main__":
 
     roundNum=0
 
-    paras = "FN_" + str(Floor_Num) + "Dire_" + str(Dire_FLg) + "Time_" + str(Peak_duration) + "pc_" + str(Pc) + "Mu_flg_" + str(Mu_flag)+"Pat_"+str(pattern)
-    print(paras)
+    paras = "FN_" + str(Floor_Num) + "_Time_" + str(Peak_duration) + "pc_" + str(int(Pc))
+
+    sheetName= str(Dire_FLg)+"_"+str(pattern)+"_Mu_" + str(Mu_flag)
+    print(paras,sheetName)
+    createResultFile(paras,sheetName)
 
     mu_dist=0
 
@@ -78,9 +81,7 @@ if __name__ == "__main__":
             peakMap = peak_map(Floor_Num)
             #print(peakMap)
             mu_df = CreateMuDistribution(Floor_Num, peakMap)
-
-            # drawkkde(mu_df) draw the kde graph
-
+            drawkkde(mu_df) #draw the kde graph
             mu_dist = mu_array(mu_df, Floor_Num)
 
             #print(mu_dist)
@@ -94,9 +95,9 @@ if __name__ == "__main__":
 
 
     initargetFs = iniateTarFs(Delta_f, Floor_Num)
+    maxTripTime=0
 
     while True:
-
         changeTemp = duTime // Delta_T + 1
 
         #print(duTime, changeTemp)
@@ -122,7 +123,10 @@ if __name__ == "__main__":
         #print(tl_managed_result[0])
         #print(tl_managed_result[1])
         mergeTl=tl_managed_result[0]
+        labor_effort = tl_managed_result[1]
         targetFs =tl_managed_result[2]
+
+        #maxTripTime= lambda x: tl_managed_result[3] if tl_managed_result[3]> maxTripTime else maxTripTime
 
         trans_result=TransportTL(mergeTl,Dire_FLg,WaitingTimeNext, Floor_Num,ele)
         #print(trans_result)
@@ -146,20 +150,16 @@ if __name__ == "__main__":
         RecordTL(wt_sum, tem_tl, overPC, rst, bld, ele, tl_managed_result,trans_result, WaitingTimeNext,roundNum,changeTemp,targetFs, duTime)
 
         print(np.sum(rst.origin_tl_df))
-        if roundNum>=10:
-            break;
-
-        #if rst.getPCsum() >= Pc:
+        #if roundNum>=10:
             #break;
 
-    print("waiting time array", rst.wtsum_array)
-    print("origin traffic load",rst.origin_tl_df)
-    print("over pc",rst.over_pc_array)
-    print("managed traffic load",rst.merge_tl_df)
-    print("trip time ",rst.ttsum_array)
-    #print(rst.ttsum_array)
+        #if rst.PCsum >= Pc:
+        if rst.getPCsum() >= 1900:
+            break;
 
-    print("change numbers", rst.changeNum_array)
-    print("round numbers", rst.round_num_array)
+    processResult(rst,duTime,roundNum,paras,sheetName)
+
+
+
 
 

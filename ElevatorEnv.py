@@ -35,7 +35,7 @@ class Result(object):
         self.llsum = 0
         self.lltotalsum = 0
         self.transferred_Count = 0;
-        self.PCsum = 0
+
 
         #self.round_num =0
 
@@ -61,6 +61,7 @@ class Result(object):
         self.round_num_array = list()
         self.llsum_array = list()
         self.duTime_array = list()
+        self.PCsum = np.array(self.origin_tl_df).sum()
 
     def getPCsum(self):
         print("transferred pc sum ---",np.array(self.origin_tl_df).sum())

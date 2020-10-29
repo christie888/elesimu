@@ -4,6 +4,41 @@ import matplotlib.pyplot as plt
 import scipy.stats as stats
 import math
 import numpy as np
+import datetime
+import pandas as pd
+import xlsxwriter
+from xlrd import open_workbook
+from openpyxl import load_workbook
+import xlwt
+import os.path
+
+
+def createResultFile(paras,sheetName):
+    resultFileName= 'file/normalData/'+paras+'.xlsx'
+    #workbook = xlsxwriter.Workbook(resultFileName)
+    if os.path.isfile(resultFileName):
+        print('exits excel file')
+        wb = load_workbook(resultFileName)
+        #print(wb.get_sheet_names())
+        if sheetName in wb.get_sheet_names():
+            print('exits sheet ')
+        else:
+            ws=wb.create_sheet(sheetName)
+            initiateSheetTitle(ws)
+            wb.save(resultFileName)
+    else:
+        print('new file')
+        workbook = xlsxwriter.Workbook(resultFileName)
+        ws=workbook.add_worksheet(sheetName)
+        initiateSheetTitle(ws)
+        workbook.close()
+
+
+def initiateSheetTitle(ws):
+    print(ws)
+    title=['AWT', 'ATT', 'Wtsum','TTsum', 'LLSum', 'totalduratime','max_waitigtime', 'max_traveltime','roundnum']
+    for i, value in enumerate(title):
+        ws.write(0,i, value)
 
 
 def CreateMuDistribution(Floor_Num,peakMap):
@@ -91,8 +126,9 @@ def drawkkde(df):
     g.despine(bottom=True, left=True)
 
     plt.xlim(0, 25)
+    now=str(datetime.datetime.now())[:10]
 
-    plt.savefig("mu.png")
+    plt.savefig("mu"+now+".png")
 
     plt.show()
 
@@ -463,3 +499,39 @@ def tagetingFloorMDPMu(delF_Merge, mdpChangeNum,mu_dist, N):
 
     print(targetFlist)
     return targetFlist
+
+def processResult(rst,duTime,roundNum,paras,sheetName):
+    print("waiting time array", rst.wtsum_array)
+    print("origin traffic load", rst.origin_tl_df)
+    print("over pc", rst.over_pc_array)
+    print("managed traffic load", rst.merge_tl_df)
+    print("trip time ", rst.ttsum_array)
+    # print(rst.ttsum_array)
+
+    print("change numbers", rst.changeNum_array)
+    print("round numbers", rst.round_num_array)
+    print("total duration time:", duTime)
+
+    print("total waiting time:", np.sum(rst.wtsum_array))
+    print("average waiting time:", np.sum(rst.wtsum_array)/np.sum(rst.getPCsum()))
+    print("total passenger count:", np.sum(rst.getPCsum()))
+    print("total trip time:", np.sum(rst.ttsum_array))
+    print("average trip time:", np.sum(rst.ttsum_array) / np.sum(rst.getPCsum()))
+
+    print("total round number:", roundNum)
+    print("total labor effort", rst.ll_sum_df.to_numpy().sum())
+
+    resultFileName = 'file/normalData/' + paras + '.xlsx'
+
+   #title = ['AWT', 'ATT', 'Wtsum', 'TTsum', 'LLSum', 'totalduratime', 'max_waitigtime', 'max_traveltime', 'roundnum']
+    wb2 = load_workbook(resultFileName)
+    worksheet = wb2[sheetName]
+    worksheet.append([np.sum(rst.wtsum_array)/np.sum(rst.getPCsum()), np.sum(rst.ttsum_array) / np.sum(rst.getPCsum()),
+                      np.sum(rst.wtsum_array), np.sum(rst.ttsum_array), rst.ll_sum_df.to_numpy().sum(), duTime,"","",roundNum])
+    wb2.save(resultFileName)
+
+
+
+
+
+
